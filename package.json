@@ -1,0 +1,45 @@
+{
+  "name": "deck",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Dola multi-account image and video studio with local media cleanup.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "test:media": "node scripts/smoke-media.js",
+    "check": "node --check main.js && node --check preload.js && node --check src/store.js && node --check src/browser-manager.js && node --check src/media.js && node --check src/dola-adapter.js && node --check renderer/app.js",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "44.2.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.jay.deck",
+    "productName": "Deck",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "scripts/deck_videowipe.py",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "scripts/*.py"
+    ],
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Deck"
+    }
+  }
+}

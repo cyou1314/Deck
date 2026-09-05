@@ -1,0 +1,27 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
+const { DeckStore } = require('../src/store')
+
+test('creates isolated account paths and keeps save prompt enabled', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deck-store-'))
+  const store = new DeckStore(root)
+  const account = store.addAccount({ name: '主号', color: '#5269ff', browserId: 'chrome' })
+  assert.equal(store.getSettings().askSaveLocation, true)
+  assert.equal(account.browserId, 'chrome')
+  assert.ok(account.profilePath.startsWith(root))
+  assert.ok(fs.existsSync(account.profilePath))
+  assert.ok(fs.existsSync(account.downloadPath))
+})
+
+test('persists and updates generation jobs by id', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deck-jobs-'))
+  const store = new DeckStore(root)
+  store.upsertJob({ id: 'job-1', createdAt: '2026-09-05T00:00:00.000Z', status: 'ready' })
+  store.upsertJob({ id: 'job-1', createdAt: '2026-09-05T00:00:00.000Z', status: 'completed', results: [{ type: 'image', url: 'https://example.com/result.png' }] })
+  assert.equal(store.listJobs().length, 1)
+  assert.equal(store.getJob('job-1').status, 'completed')
+  assert.equal(store.getJob('job-1').results.length, 1)
+})

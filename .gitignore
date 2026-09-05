@@ -1,0 +1,11 @@
+node_modules/
+release/
+vendor/
+DeckData/
+.env
+.env.*
+*.pem
+*.key
+coverage/
+*.log
+.DS_Store

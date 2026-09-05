@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: file: https:; media-src 'self' file: blob: https:; style-src 'self'; script-src 'self'">
+  <title>Deck</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div class="brand"><span class="brand-mark">D</span><span><strong>Deck</strong><small>multi-account studio</small></span></div>
+      <nav class="top-nav" aria-label="主导航">
+        <button class="nav-item active" data-page="workspace">工作台</button>
+        <button class="nav-item" data-page="files">文件</button>
+        <button class="nav-item" data-page="cleanup">画面清理</button>
+        <button class="nav-item" data-page="settings">设置</button>
+      </nav>
+      <div class="system-state"><span class="state-dot"></span><span id="tool-status">正在检查工具</span></div>
+    </header>
+
+    <main>
+      <section class="page active" id="page-workspace">
+        <div class="workspace-layout">
+          <div class="workspace-stage">
+            <div class="workspace-account-bar">
+              <div class="account-bar-identity">
+                <span class="account-bar-kicker">ACCOUNT</span>
+                <strong id="active-name">未选择账号</strong>
+                <span id="active-status">先添加账号</span>
+              </div>
+              <div class="account-bar-list-wrap"><span class="account-list-count" id="account-count">0</span><div id="account-list" class="account-list account-list-inline"></div></div>
+              <div class="account-bar-actions">
+                <button id="open-studio-button" class="primary-action" type="button">连接账号</button>
+                <button id="add-account-button" class="add-account" type="button"><span>＋</span>添加账号</button>
+                <button id="launch-account-button" class="secondary-action" type="button">外部浏览器</button>
+                <button id="open-download-folder" class="text-action" type="button">下载目录</button>
+              </div>
+            </div>
+
+            <div id="empty-account" class="empty-state">
+              <span class="empty-index">START</span>
+              <h1>先添加一个账号环境</h1>
+              <p>Deck 会创建独立浏览器目录，登录由你在浏览器中完成。</p>
+              <button class="primary-action" type="button" data-open-account-dialog>添加第一个账号</button>
+            </div>
+
+            <div id="account-stage" hidden>
+              <section class="recent-section">
+                <div class="section-heading"><div><h2>最近文件</h2><p>本地导入和处理结果会出现在这里</p></div><button class="text-action" type="button" data-page="files">查看全部</button></div>
+                <div id="recent-files" class="filmstrip"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page studio-page" id="page-studio">
+        <div class="studio-toolbar">
+          <div class="studio-account"><span id="studio-account-dot"></span><strong id="studio-account-name">未选择账号</strong></div>
+          <div class="runtime-badge"><span id="studio-loading-dot"></span><strong>后台会话</strong><span id="studio-status-copy">选择账号后连接</span></div>
+        </div>
+        <div class="generation-workbench">
+          <aside class="generation-panel">
+            <div class="panel-kicker">DECK GENERATOR <span>01</span></div>
+            <div class="generation-intro">
+              <h1>把素材变成<br><em>可执行的提示词</em></h1>
+              <p>先在 Deck 里整理参考素材和参数，再交给当前 Dola 账号执行。</p>
+            </div>
+
+            <div class="generation-mode" role="tablist" aria-label="生成类型">
+              <button type="button" class="generation-mode-button active" data-generation-mode="video" role="tab" aria-selected="true"><span>▣</span>视频</button>
+              <button type="button" class="generation-mode-button" data-generation-mode="image" role="tab" aria-selected="false"><span>◈</span>图片</button>
+            </div>
+
+            <div class="prompt-block">
+              <div class="field-label"><span>提示词</span><span id="prompt-count">0 字</span></div>
+              <textarea id="studio-prompt" rows="5" placeholder="描述画面、动作、镜头和声音……&#10;输入 @ 可以引用下方已添加的素材。"></textarea>
+              <div id="mention-popover" class="mention-popover" hidden></div>
+              <div class="prompt-footer"><span>提示：用 <kbd>@</kbd> 叫出素材引用</span><button id="clear-prompt" class="text-action" type="button">清空</button></div>
+            </div>
+
+            <div class="asset-block">
+              <div class="field-label"><span>参考素材</span><span id="asset-count">0 个</span></div>
+              <div id="asset-list" class="asset-list"></div>
+              <div id="asset-empty" class="asset-empty"><strong>还没有参考素材</strong><span>当前 Dola 生成页实测支持图片引用；音频先保留在 Deck，待后续适配</span></div>
+              <button id="add-assets-button" class="asset-dropzone" type="button"><span>＋</span><span><strong>添加图片或音频</strong><small>支持多选，Deck 不会改动原文件</small></span></button>
+              <label class="asset-auto-mention"><input id="auto-mention-assets" type="checkbox" checked><span>在提示词的 @ 位置自动填入图片</span><small>例如「参考角色：@」→「参考角色：@西门孝」</small></label>
+            </div>
+
+            <div class="parameter-block">
+              <div class="field-label"><span>生成参数</span><span>提交前可再确认</span></div>
+              <div class="parameter-row"><label>模型<select id="studio-model"></select></label><label>画幅<select id="studio-ratio"></select></label></div>
+              <label id="duration-field">时长<select id="studio-duration"><option value="5">5 秒</option><option value="10">10 秒</option></select></label>
+              <label id="style-field" hidden>风格<select id="studio-style"><option value="人像摄影">人像摄影</option><option value="风景">风景</option><option value="动漫">动漫</option><option value="3D渲染">3D 渲染</option><option value="赛博朋克">赛博朋克</option><option value="油画">油画</option><option value="水彩画">水彩画</option><option value="平面插画">平面插画</option><option value="儿童绘画">儿童绘画</option><option value="像素风格">像素风格</option><option value="彩铅画">彩铅画</option><option value="水墨画">水墨画</option><option value="油墨印刷">油墨印刷</option></select></label>
+            </div>
+
+            <div class="quota-card">
+              <div class="quota-card-head"><div><span>额度用量</span><strong id="quota-account">未选择账号</strong></div><button id="refresh-quota-button" type="button">刷新</button></div>
+              <div><span>页面剩余</span><strong id="quota-balance">连接后读取</strong></div>
+              <div><span>本次预估</span><strong id="quota-estimate">2 积分</strong></div>
+              <small id="quota-updated">额度按账号独立读取；生成前会再次刷新。</small>
+            </div>
+            <button id="prepare-generation-button" class="primary-action full-width generation-submit" type="button">检查并准备生成</button>
+            <p id="generation-status" class="generation-status">准备阶段只写入后台页面，不扣额度；确认生成前会再次显示预计消耗。</p>
+          </aside>
+
+          <section class="generation-main">
+            <div class="generation-main-head">
+              <div><span class="panel-kicker">DECK RUNTIME</span><h2>后台生成会话</h2><p>Deck 前台不显示 Dola 网页，账号会话在后台保持并负责提交与回收结果。</p></div>
+              <button id="studio-start-button" class="secondary-action" type="button">连接当前账号</button>
+            </div>
+            <div id="parameter-dock" class="parameter-dock"></div>
+            <div id="studio-slot" class="studio-slot">
+              <div id="studio-empty" class="studio-empty">
+                <span>DECK / SESSION</span>
+                <h1>生成会话待连接</h1>
+                <p id="runtime-copy">连接账号后，Deck 会在后台准备 Dola 会话。你只需要在这里整理提示词、素材和参数。</p>
+                <div class="runtime-steps"><span class="runtime-step active"><i>01</i>素材预检</span><span class="runtime-step"><i>02</i>确认提交</span><span class="runtime-step"><i>03</i>回收结果</span></div>
+                <button class="primary-action" type="button" data-open-studio-from-panel>连接当前账号</button>
+              </div>
+            </div>
+            <section class="job-section">
+              <div class="job-section-heading"><div><span class="panel-kicker">TASK QUEUE</span><h2>最近任务</h2></div><span id="job-count">0</span></div>
+              <div id="studio-job-list" class="studio-job-list"><div class="job-empty">准备后的任务会显示在这里；只有点击“确认生成”才会消耗额度。</div></div>
+            </section>
+          </section>
+        </div>
+      </section>
+
+      <section class="page page-padding" id="page-files">
+        <header class="page-heading"><div><h1>文件</h1><p>浏览器另存为到任意位置后，可在这里添加视频。</p></div><button id="import-file-button" class="secondary-action" type="button">添加本地视频</button></header>
+        <div class="download-rule"><span class="rule-icon">↳</span><div><strong>下载前询问保存位置</strong><p id="save-rule-copy">每个文件都会单独打开系统“另存为”窗口。</p></div></div>
+        <div id="file-list" class="file-list"></div>
+      </section>
+
+      <section class="page page-padding" id="page-cleanup">
+        <header class="page-heading"><div><h1>画面清理</h1><p>固定角标走快速模式；硬字幕和复杂文字必须使用 AI 修复。</p></div><button id="choose-video-button" class="secondary-action" type="button">添加本地视频</button></header>
+        <div id="cleanup-empty" class="cleanup-empty">
+          <div class="drop-symbol">＋</div>
+          <h2>选择一个视频开始</h2>
+          <p>支持 MP4、MOV、MKV、WebM 和 AVI。原始文件不会被覆盖。</p>
+          <button class="primary-action" type="button" data-choose-video>选择视频</button>
+        </div>
+        <div id="cleanup-editor" class="cleanup-grid" hidden>
+          <div class="video-column">
+            <div id="video-frame" class="video-frame">
+              <video id="video-preview" controls></video>
+              <img id="ai-preview-image" class="ai-preview-image" alt="AI 检测预览" hidden>
+              <div id="watermark-box" class="watermark-box" aria-label="水印区域"><span>拖动水印框</span></div>
+            </div>
+            <div class="video-meta"><span id="video-name"></span><span id="video-spec"></span></div>
+          </div>
+          <aside class="process-panel">
+            <h2>处理方式</h2>
+            <div class="cleanup-modes">
+              <label class="mode-card active"><input type="radio" name="cleanup-mode" value="fast" checked><span><strong>快速角标</strong><small>固定、小面积、背景简单</small></span><em>FFmpeg</em></label>
+              <label class="mode-card"><input type="radio" name="cleanup-mode" value="ai"><span><strong>AI 去字幕 / 文字</strong><small>OCR 检测 + 时序画面修复</small></span><em>推荐</em></label>
+            </div>
+            <div id="fast-cleanup-settings">
+            <label>快捷位置
+              <select id="region-preset">
+                <option value="bottom-right">右下角</option>
+                <option value="bottom-left">左下角</option>
+                <option value="top-right">右上角</option>
+                <option value="top-left">左上角</option>
+              </select>
+            </label>
+            <div class="region-grid">
+              <label>X<input id="region-x" type="number" min="0" max="98" value="75"></label>
+              <label>Y<input id="region-y" type="number" min="0" max="98" value="80"></label>
+              <label>宽<input id="region-w" type="number" min="2" max="100" value="20"></label>
+              <label>高<input id="region-h" type="number" min="2" max="100" value="12"></label>
+            </div>
+            <p class="process-note">数值为画面百分比。这只是快速角标修补，不用于整段字幕。</p>
+            </div>
+            <div id="ai-cleanup-settings" hidden>
+              <div class="engine-state"><span></span><div><strong id="ai-engine-title">正在检查 AI 引擎</strong><small id="ai-engine-copy">字幕将逐帧检测，不再用一个矩形糊完整段视频。</small></div></div>
+              <label>内容类型
+                <select id="ai-content-type"><option value="subtitle">硬字幕</option><option value="text-watermark">文字水印</option><option value="manual">手动画多个区域</option></select>
+              </label>
+              <label>修复质量
+                <select id="ai-quality"><option value="balanced">均衡检测</option><option value="fast">快速检测</option><option value="sensitive">精细检测</option></select>
+              </label>
+              <div id="ai-review" class="ai-review" hidden><strong id="ai-review-title">检测完成</strong><small id="ai-review-copy"></small><button id="reset-ai-preview" class="text-action" type="button">重新检测</button></div>
+              <p class="process-note">RTX 5060 8GB 可运行本地 AI 模式。首次配置会安装独立运行环境和模型，不污染现有项目。</p>
+            </div>
+            <button id="process-button" class="primary-action full-width" type="button">选择保存位置并处理</button>
+            <div id="process-progress-wrap" class="progress-wrap" hidden>
+              <div class="progress-track"><span id="process-progress"></span></div>
+              <p id="process-status">处理中 0%</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page page-padding" id="page-settings">
+        <header class="page-heading"><div><h1>设置</h1><p>账号数据与媒体文件优先保存在 D 盘。</p></div></header>
+        <div class="settings-list">
+          <label class="setting-row"><span><strong>默认浏览器</strong><small>新账号默认使用</small></span><select id="default-browser"></select></label>
+          <label class="setting-row"><span><strong>每次询问保存位置</strong><small>写入每个账号的浏览器下载设置</small></span><span class="toggle"><input id="ask-save-location" type="checkbox"><i></i><b id="ask-save-label">已开启</b></span></label>
+          <div class="setting-row"><span><strong>账号数据目录</strong><small id="data-root"></small></span><em>固定</em></div>
+          <div class="setting-row"><span><strong>默认下载目录</strong><small id="downloads-root"></small></span><button id="change-downloads-root" class="text-action" type="button">更改</button></div>
+          <div class="setting-row"><span><strong>处理输出目录</strong><small id="processed-root"></small></span><button id="change-processed-root" class="text-action" type="button">更改</button></div>
+          <div class="setting-row"><span><strong>登录凭证</strong><small>由账号浏览器环境保存，Deck 不读取</small></span><em class="safe">独立隔离</em></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="account-dialog-layer" class="dialog-layer" hidden>
+      <form id="account-form" class="dialog-panel">
+        <span class="dialog-kicker">NEW ACCOUNT</span>
+        <h2>添加账号环境</h2>
+        <p>创建后会打开 Dola 登录页，由你手动完成登录。</p>
+        <label>账号备注名<input id="account-name" maxlength="30" required placeholder="例如：主号"></label>
+        <label>浏览器<select id="account-browser" required></select></label>
+        <label>识别颜色<input id="account-color" type="color" value="#5269ff"></label>
+        <div class="dialog-actions"><button id="cancel-account" class="secondary-action" type="button">取消</button><button class="primary-action" type="submit">创建并打开</button></div>
+      </form>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
